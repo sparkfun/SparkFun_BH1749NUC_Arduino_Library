@@ -1,0 +1,55 @@
+#######################################
+# Syntax Coloring Map 
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+BH1749NUC	KEYWORD1
+SparkFun_BH1749NUC_Arduino_Library	KEYWORD1
+BH1749NUC_error_t	KEYWORD1
+BH1749NUC_gain_t	KEYWORD1
+BH1749NUC_Address_t	KEYWORD1
+BH1749NUC_measurement_mode_t	KEYWORD1
+red	KEYWORD1
+green	KEYWORD1
+blue	KEYWORD1
+ir	KEYWORD1
+green2	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+setDebugStream	KEYWORD2
+invert	KEYWORD2
+revert	KEYWORD2
+readIRGain	KEYWORD2
+setIRGain	KEYWORD2
+readRGBGain	KEYWORD2
+setRGBGain	KEYWORD2
+readMeasurementMode	KEYWORD2
+setMeasurementMode	KEYWORD2
+ready	KEYWORD2
+update	KEYWORD2
+read	KEYWORD2
+readRed	KEYWORD2
+readGreen	KEYWORD2
+readGreen2	KEYWORD2
+readBlue	KEYWORD2
+readIR	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+BH1749NUC_ADDRESS_CLOSED	LITERAL1
+BH1749NUC_ADDRESS_OPEN	LITERAL1
+BH1749NUC_ADDRESS_DEFAULT	LITERAL1
+BH1749NUC_GAIN_X1	LITERAL1
+BH1749NUC_GAIN_X32	LITERAL1
+BH1749NUC_MEASUREMENT_MODE_120_MS	LITERAL1
+BH1749NUC_MEASUREMENT_MODE_240_MS	LITERAL1
+BH1749NUC_MEASUREMENT_MODE_35_MS	LITERAL1
+BH1749NUC_SUCCESS	LITERAL1
