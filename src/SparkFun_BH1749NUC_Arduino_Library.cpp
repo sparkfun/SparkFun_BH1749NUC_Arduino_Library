@@ -112,6 +112,15 @@ BH1749NUC_error_t BH1749NUC::begin(BH1749NUC_Address_t deviceAddress, TwoWire &w
     return BH1749NUC_ERROR_SUCCESS;
 }
 
+boolean BH1749NUC::begin()
+{
+    if (begin(BH1749NUC_ADDRESS_DEFAULT, Wire) == BH1749NUC_ERROR_SUCCESS)
+    {
+        return true;
+    }
+    return false;
+}
+
 void BH1749NUC::setDebugStream(Stream & debugPort)
 {
     _debugPort = &debugPort;

@@ -123,8 +123,8 @@ public:
 
     BH1749NUC(void);
 
-    BH1749NUC_error_t begin(BH1749NUC_Address_t deviceAddress = BH1749NUC_ADDRESS_DEFAULT,
-                  TwoWire &wirePort = Wire);
+    BH1749NUC_error_t begin(BH1749NUC_Address_t deviceAddress, TwoWire &wirePort);
+    boolean begin();
 
     void setDebugStream(Stream &debugPort = Serial);
     
