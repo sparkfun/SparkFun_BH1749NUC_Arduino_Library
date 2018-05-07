@@ -253,6 +253,52 @@ boolean BH1749NUC::update(void)
     }
     return false;
 }
+
+uint16_t BH1749NUC::red(void)
+{
+    if (available())
+    {
+        update();
+    }
+    return this->colors.red;
+}
+
+uint16_t BH1749NUC::green(void)
+{
+    if (available())
+    {
+        update();
+    }
+    return this->colors.green;    
+}
+
+uint16_t BH1749NUC::blue(void)
+{
+    if (available())
+    {
+        update();
+    }
+    return this->colors.blue;    
+}
+
+uint16_t BH1749NUC::ir(void)
+{
+    if (available())
+    {
+        update();
+    }
+    return this->colors.ir;    
+}
+
+uint16_t BH1749NUC::green2(void)
+{
+    if (available())
+    {
+        update();
+    }
+    return this->colors.green2;    
+}
+
 uint16_t BH1749NUC::read(BH1749NUC_color_t color)
 {
     uint16_t retVal;
@@ -363,6 +409,11 @@ boolean BH1749NUC::ready(void)
         return true;
     }
     return false;
+}
+
+boolean BH1749NUC::available(void)
+{
+    return ready();
 }
 
 // Private

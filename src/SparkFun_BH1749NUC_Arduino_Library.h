@@ -123,7 +123,7 @@ public:
 
     BH1749NUC(void);
 
-    BH1749NUC_error_t begin(BH1749NUC_Address_t deviceAddress, TwoWire &wirePort);
+    BH1749NUC_error_t begin(BH1749NUC_Address_t deviceAddress, TwoWire &wirePort = Wire);
     boolean begin();
 
     void setDebugStream(Stream &debugPort = Serial);
@@ -139,6 +139,13 @@ public:
     boolean ready(void);
 
     boolean update(void);
+    boolean available(void);
+
+    uint16_t red(void);
+    uint16_t green(void);
+    uint16_t blue(void);
+    uint16_t ir(void);
+    uint16_t green2(void);
 
     BH1749NUC_error_t read(rgb_sense * rgb);
     uint16_t read(BH1749NUC_color_t color);
