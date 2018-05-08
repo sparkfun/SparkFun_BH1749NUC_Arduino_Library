@@ -100,6 +100,23 @@ typedef enum {
 } BH1749NUC_color_t;
 
 typedef enum {
+    BH1749NUC_INT_SOURCE_RED,
+    BH1749NUC_INT_SOURCE_GREEN,
+    BH1749NUC_INT_SOURCE_BLUE,
+    BH1749NUC_INT_SOURCE_FORBIDDEN,
+    BH1749NUC_INT_SOURCE_NEW,
+    BH1749NUC_INT_SOURCE_INVALID
+} BH1749NUC_int_source_t;
+
+typedef enum {
+    BH1749NUC_INT_NEW_DATA,
+    BH1749NUC_INT_PERSISTENCE_1,
+    BH1749NUC_INT_PERSISTENCE_4,
+    BH1749NUC_INT_PERSISTENCE_8,
+    BH1749NUC_INT_PERSISTENCE_INVALID
+} BH1749NUC_int_persistence_t;
+
+typedef enum {
     BH1749NUC_ERROR_PART_ID         = -5,
     BH1749NUC_ERROR_READ            = -4,
     BH1749NUC_ERROR_WRITE           = -3,
@@ -127,6 +144,8 @@ public:
     boolean begin();
 
     void setDebugStream(Stream &debugPort = Serial);
+
+    BH1749NUC_error_t clearInterrupt(void);
     
     BH1749NUC_gain_t readIRGain(void);
     BH1749NUC_error_t setIRGain(BH1749NUC_gain_t gain);
@@ -136,9 +155,8 @@ public:
     BH1749NUC_measurement_mode_t readMeasurementMode(void);
     BH1749NUC_error_t setMeasurementMode(BH1749NUC_measurement_mode_t mode);
 
-    boolean ready(void);
-
     boolean update(void);
+    boolean ready(void);
     boolean available(void);
 
     uint16_t red(void);
@@ -154,11 +172,31 @@ public:
     uint16_t readGreen2(void);
     uint16_t readBlue(void);
     uint16_t readIR(void);
+
+    boolean readInterrupt(void); // Read interrupt status
+    BH1749NUC_int_source_t getInterruptSource(void);
+    BH1749NUC_error_t setInterruptSource(BH1749NUC_int_source_t source);
+    BH1749NUC_error_t setInterruptSource(BH1749NUC_color_t color, BH1749NUC_int_persistence_t persist = BH1749NUC_INT_PERSISTENCE_1);
+    boolean getEnableInterrupt(void);
+    BH1749NUC_error_t enableInterrupt(boolean enable = true);
+
+    BH1749NUC_int_persistence_t getInterruptPersistence(void);
+    BH1749NUC_error_t setInterruptPersistence(BH1749NUC_int_persistence_t persist);
+
+    uint16_t getThresholdHigh(void);
+    uint16_t getThresholdLow(void);
+    BH1749NUC_error_t setThresholdHigh(uint16_t highThresh);
+    BH1749NUC_error_t setThresholdLow(uint16_t lowThresh);
+    BH1749NUC_error_t setThresholds(uint16_t lowThresh, uint16_t highThresh);
+
+    void setInterruptPin(uint8_t pin);
+
 private:
 
     TwoWire *_i2cPort; //The generic connection to user's chosen I2C hardware
     BH1749NUC_Address_t _deviceAddress;
     Stream * _debugPort;
+    boolean _intEnabled;
 
 // System Control
     typedef enum {

@@ -34,6 +34,9 @@
 #define STORAGE(x) (x)
 #endif
 
+#define BH1749NUC_INT_RESET_MASK  0x40
+#define BH1749NUC_INT_RESET_SHIFT 6
+
 #define BH1749NUC_PART_ID_MASK  0x3F
 #define BH1749NUC_PART_ID_SHIFT 0
 
@@ -51,6 +54,18 @@
 
 #define BH1749NUC_ACTIVE_MASK  0x10
 #define BH1749NUC_ACTIVE_SHIFT 4
+
+#define BH1749NUC_INT_STATUS_MASK  0x80
+#define BH1749NUC_INT_STATUS_SHIFT 7
+
+#define BH1749NUC_INT_SOURCE_MASK  0x0C
+#define BH1749NUC_INT_SOURCE_SHIFT 2
+
+#define BH1749NUC_INT_ENABLE_MASK  0x01
+#define BH1749NUC_INT_ENABLE_SHIFT 0
+
+#define BH1749NUC_PERSISTENCE_MASK  0x03
+#define BH1749NUC_PERSISTENCE_SHIFT 0
 
 enum {
     BH1749NUC_RED_L,       // 0
@@ -83,6 +98,7 @@ BH1749NUC::BH1749NUC()
 #ifdef DEBUG_BH1749NUC
     _debugPort = NULL;
 #endif
+    _intEnabled = false;
 }
 
 BH1749NUC_error_t BH1749NUC::begin(BH1749NUC_Address_t deviceAddress, TwoWire &wirePort) 
@@ -126,6 +142,19 @@ void BH1749NUC::setDebugStream(Stream & debugPort)
     _debugPort = &debugPort;
 }
 
+BH1749NUC_error_t BH1749NUC::clearInterrupt(void)
+{
+    uint8_t rawRegister;
+    BH1749NUC_error_t err;
+    BH1749NUC_gain_t retVal;
+
+    err = readI2CRegister(&rawRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err  != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    return err;
+}
 
 BH1749NUC_gain_t BH1749NUC::readIRGain(void)
 {
@@ -402,10 +431,196 @@ uint16_t BH1749NUC::readIR(void)
     return rawIRData[BH1749NUC_COLOR_L] | (rawIRData[BH1749NUC_COLOR_H] << 8);
 }
 
+// Read and clear the interrupt bit
+boolean BH1749NUC::readInterrupt(void)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    return BH1749NUC_MASK(rawIntRegister, BH1749NUC_INT_STATUS_MASK, BH1749NUC_INT_STATUS_SHIFT);
+}
+
+BH1749NUC_int_source_t BH1749NUC::getInterruptSource(void)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return BH1749NUC_INT_SOURCE_INVALID;
+    }
+    return (BH1749NUC_int_source_t) BH1749NUC_MASK(rawIntRegister, BH1749NUC_INT_SOURCE_MASK, BH1749NUC_INT_SOURCE_SHIFT);
+}
+
+BH1749NUC_error_t BH1749NUC::setInterruptSource(BH1749NUC_int_source_t source)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+
+    if ((source == BH1749NUC_INT_SOURCE_FORBIDDEN) || (source == BH1749NUC_INT_SOURCE_INVALID))
+    {
+        return BH1749NUC_ERROR_UNDEFINED;
+    }
+    else if (source == BH1749NUC_INT_SOURCE_NEW)
+    {
+        return setInterruptPersistence(BH1749NUC_INT_NEW_DATA);
+    }
+
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    rawIntRegister &= ~(BH1749NUC_INT_SOURCE_MASK);
+    rawIntRegister |= (source << BH1749NUC_INT_SOURCE_SHIFT);
+    return writeI2CRegister(rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+}
+
+BH1749NUC_error_t BH1749NUC::setInterruptSource(BH1749NUC_color_t color,  BH1749NUC_int_persistence_t persist)
+{
+    BH1749NUC_error_t err;
+    if (color >= BH1749NUC_IR) {
+        return BH1749NUC_ERROR_UNDEFINED;
+    } 
+    err = setInterruptSource((BH1749NUC_int_source_t) color);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    return setInterruptPersistence(persist);
+}
+
+boolean BH1749NUC::getEnableInterrupt(void)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return BH1749NUC_INT_SOURCE_INVALID;
+    }
+    return (boolean) BH1749NUC_MASK(rawIntRegister, BH1749NUC_INT_ENABLE_MASK, BH1749NUC_INT_ENABLE_SHIFT);
+}
+
+BH1749NUC_error_t BH1749NUC::enableInterrupt(boolean enable)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    rawIntRegister &= ~(BH1749NUC_INT_ENABLE_MASK);
+    if (enable)
+    {
+        rawIntRegister |= (1 << BH1749NUC_INT_ENABLE_SHIFT);
+        _intEnabled = true;
+    }
+    else
+    {
+        _intEnabled = false;
+    }
+    return writeI2CRegister(rawIntRegister, BH1749NUC_REGISTER_INTERRUPT);
+}
+
+BH1749NUC_int_persistence_t BH1749NUC::getInterruptPersistence(void)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_PERSISTENCE);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return BH1749NUC_INT_PERSISTENCE_INVALID;
+    }
+    return (BH1749NUC_int_persistence_t) BH1749NUC_MASK(rawIntRegister, BH1749NUC_PERSISTENCE_MASK, BH1749NUC_PERSISTENCE_SHIFT);
+}
+
+BH1749NUC_error_t BH1749NUC::setInterruptPersistence(BH1749NUC_int_persistence_t persist)
+{
+    uint8_t rawIntRegister;
+    BH1749NUC_error_t err;
+
+    err = readI2CRegister(&rawIntRegister, BH1749NUC_REGISTER_PERSISTENCE);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    rawIntRegister &= ~(BH1749NUC_PERSISTENCE_MASK);
+    rawIntRegister |= (persist << BH1749NUC_PERSISTENCE_SHIFT);
+    return writeI2CRegister(rawIntRegister, BH1749NUC_REGISTER_PERSISTENCE);
+}
+
+uint16_t BH1749NUC::getThresholdHigh(void)
+{
+    uint8_t threshBits[2];
+    BH1749NUC_error_t err;
+    err = readI2CBuffer(threshBits, BH1749NUC_REGISTER_TH_HIGH_L, 2);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    return ((uint16_t)threshBits[1] << 8) | threshBits[0];
+}
+
+uint16_t BH1749NUC::getThresholdLow(void)
+{
+    uint8_t threshBits[2];
+    BH1749NUC_error_t err;
+    err = readI2CBuffer(threshBits, BH1749NUC_REGISTER_TH_LOW_L, 2);
+    if (err != BH1749NUC_ERROR_SUCCESS)
+    {
+        return err;
+    }
+    return ((uint16_t)threshBits[1] << 8) | threshBits[0];
+}
+
+BH1749NUC_error_t BH1749NUC::setThresholdHigh(uint16_t highThresh)
+{
+    uint8_t threshBits[2];
+    threshBits[0] = (highThresh & 0x00FF);
+    threshBits[1] = (highThresh & 0xFF00) >> 8;
+    return writeI2CBuffer(threshBits, BH1749NUC_REGISTER_TH_HIGH_L, 2);
+
+}
+
+BH1749NUC_error_t BH1749NUC::setThresholdLow(uint16_t lowThresh)
+{
+    uint8_t threshBits[2];
+    threshBits[0] = (lowThresh & 0x00FF);
+    threshBits[1] = (lowThresh & 0xFF00) >> 8;
+    return writeI2CBuffer(threshBits, BH1749NUC_REGISTER_TH_LOW_L, 2);
+}
+
+BH1749NUC_error_t BH1749NUC::setThresholds(uint16_t lowThresh, uint16_t highThresh)
+{
+    uint8_t thresholds[4];
+
+    if (highThresh < lowThresh) 
+    {
+        return BH1749NUC_ERROR_UNDEFINED;
+    }
+    thresholds[0] = (highThresh & 0x00FF);
+    thresholds[1] = (highThresh & 0xFF00) >> 8;
+    thresholds[2] = (lowThresh & 0x00FF);
+    thresholds[3] = (lowThresh & 0xFF00) >> 8;
+    return writeI2CBuffer(thresholds, BH1749NUC_REGISTER_TH_HIGH_L, 4);
+}
+
 boolean BH1749NUC::ready(void)
 {
     if (readValid() == BH1749NUC_MEASUREMENT_VALID_VALID)
     {
+        if (_intEnabled)
+        {
+            readInterrupt(); // Clear interrupt if enabled
+        }
+        update();
         return true;
     }
     return false;

@@ -38,16 +38,13 @@ void setup() {
 }
 
 void loop() {
-  if (rgb.ready())
+  if (rgb.available())
   {
-    if (rgb.update())
-    {
-      Serial.println("Red: " + String(rgb.colors.red));
-      Serial.println("Green: " + String(rgb.colors.green));
-      Serial.println("Blue: " + String(rgb.colors.blue));
-      Serial.println("IR: " + String(rgb.colors.ir));
-      Serial.println("Green2: " + String(rgb.colors.green2));
-      Serial.println();
-    }
+    Serial.println("Red: " + String(rgb.colors.red));
+    Serial.println("Green: " + String(rgb.colors.green));
+    Serial.println("Blue: " + String(rgb.colors.blue));
+    Serial.println("IR: " + String(rgb.colors.ir));
+    Serial.println("Green2: " + String(rgb.colors.green2));
+    Serial.println();
   }
 }
