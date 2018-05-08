@@ -1,13 +1,13 @@
 /*
-  Using the BH1749NUC -- RGB/IR Monitoring
+  Using the BH1749NUC -- RGB/IR I2C Polling
   By: Jim Lindblom
   SparkFun Electronics
   Date: May 4, 2018
   License: This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
   Feel like supporting our work? Buy a board from SparkFun!
   https://www.sparkfun.com/products/TODO
-  This example demonstrates how to initialize and configure the BH1749NUC color sensor.
-  Then check for new data and print the RGB and IR color data to the Serial Monitor at 115200
+  This example demonstrates how to more efficiently poll the sensor for new data,
+  then read and print all data when updates become available. 
   
   Hardware Connections:
   Attach the Qwiic Shield to your Arduino/Photon/ESP32 or other
@@ -38,11 +38,13 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("Red: " + String(rgb.red()));
-  Serial.println("Green: " + String(rgb.green()));
-  Serial.println("Blue: " + String(rgb.blue()));
-  Serial.println("IR: " + String(rgb.ir()));
-  Serial.println("Green2: " + String(rgb.green2()));
-  Serial.println();
-  delay(1000);
+  if (rgb.available())
+  {
+    Serial.println("Red: " + String(rgb.colors.red));
+    Serial.println("Green: " + String(rgb.colors.green));
+    Serial.println("Blue: " + String(rgb.colors.blue));
+    Serial.println("IR: " + String(rgb.colors.ir));
+    Serial.println("Green2: " + String(rgb.colors.green2));
+    Serial.println();
+  }
 }
