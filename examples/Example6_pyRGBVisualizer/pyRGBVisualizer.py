@@ -19,27 +19,43 @@ ser = serial.Serial('COM4', 115200)
 
 ''' Globals '''
 ledStates = [0, 0, 0, 0]
-maxColorValues = [1, 1, 1]
+maxColorValues = [MAX_COLOR_VALUE, MAX_COLOR_VALUE, MAX_COLOR_VALUE]
+minColorValues = [0, 0, 0]
 latestColorValues = [0, 0, 0]
+g_pause = 0
 
 ''' UI set up '''
 master=tk.Tk()
 master.winfo_toplevel().title("RGB Sensor Evaluation")
 master.grid()
+
 whiteButton=tk.Button()
 redButton=tk.Button()
 greenButton=tk.Button()
 blueButton=tk.Button()
-redEntry=tk.Entry(master, width=5)
-greenEntry=tk.Entry(master, width=5)
-blueEntry=tk.Entry(master, width=5)
-redSlider=tk.Scale(master)
-greenSlider=tk.Scale(master)
-blueSlider=tk.Scale(master)
+
 redText=tk.Label(master, text="0", fg="red")
+redMaxEntry=tk.Entry(master, width=5)
+redMinClick=tk.Button()
+redMinEntry=tk.Entry(master, width=5)
+
 greenText=tk.Label(master, text="0", fg="green")
+greenMaxEntry=tk.Entry(master, width=5)
+greenMinClick=tk.Button()
+greenMinEntry=tk.Entry(master, width=5)
+
 blueText=tk.Label(master, text="0", fg="blue")
+blueMaxEntry=tk.Entry(master, width=5)
+blueMinClick=tk.Button()
+blueMinEntry=tk.Entry(master, width=5)
+
+colorMinEntry = [redMinEntry, greenMinEntry, blueMinEntry]
+
 canvas = tk.Canvas(master, width=200, height=100)
+
+rgbLabel = tk.Label(master, text="#000000", fg="black")
+
+pauseButton=tk.Button()
 
 # LED control
 def whiteLED():
@@ -57,12 +73,10 @@ def redLED():
         ser.write('r1'.encode('utf-8'))
         ledStates[RED_LED] = 1
         redButton.configure(bg='red')
-        redButton.grid(row=2,column=2)
     else:
         ser.write('r0'.encode('utf-8'))
         ledStates[RED_LED] = 0
         redButton.configure(bg='white')
-        redButton.grid(row=2,column=2)
     
 def greenLED():
     if ledStates[GREEN_LED] == 0:
@@ -84,47 +98,83 @@ def blueLED():
         ledStates[BLUE_LED] = 0
         blueButton.configure(bg='white')
 
-def setRedMax(value):
+def updateRedMin():
+    global latestColorValues
     global maxColorValues
-    maxColorValues[RED] = value
-    redEntry.delete(0, 5)
-    redEntry.insert(0, str(value))
+    low = latestColorValues[RED]
+    high = maxColorValues[RED]
+    minColorValues[RED] = low
+    maxColorValues[RED] = high
+    redMinEntry.delete(0, 5)
+    redMinEntry.insert(0, str(low))
+    redMaxEntry.delete(0, 5)
+    redMaxEntry.insert(0, str(high))
 
-def setGreenMax(value):
+def updateGreenMin():
+    global latestColorValues
     global maxColorValues
-    maxColorValues[GREEN] = value
-    greenEntry.delete(0, 5)
-    greenEntry.insert(0, str(value))
+    low = latestColorValues[GREEN]
+    high = maxColorValues[GREEN]
+    minColorValues[GREEN] = low
+    maxColorValues[GREEN] = high
+    greenMinEntry.delete(0, 5)
+    greenMinEntry.insert(0, str(low))
+    greenMaxEntry.delete(0, 5)
+    greenMaxEntry.insert(0, str(high))
 
-def setBlueMax(value):
+def updateBlueMin():
+    global latestColorValues
     global maxColorValues
-    maxColorValues[BLUE] = value
-    blueEntry.delete(0, 5)
-    blueEntry.insert(0, str(value))
+    low = latestColorValues[BLUE]
+    high = maxColorValues[BLUE]
+    minColorValues[BLUE] = low
+    maxColorValues[BLUE] = high
+    blueMinEntry.delete(0, 5)
+    blueMinEntry.insert(0, str(low))
+    blueMaxEntry.delete(0, 5)
+    blueMaxEntry.insert(0, str(high))
 
-def redMaxEntry():
+def setRedMinMax(low, high):
     global maxColorValues
-    tempMax = int(redEntry.get())
-    if (tempMax < 1) or (tempMax > MAX_COLOR_VALUE):
-        return
-    maxColorValues[RED] = tempMax
-    redSlider.set(int(maxColorValues[RED]))
+    global minColorValues
+    minColorValues[RED] = low
+    maxColorValues[RED] = high
+    redMinEntry.delete(0, 5)
+    redMinEntry.insert(0, str(low))
+    redMaxEntry.delete(0, 5)
+    redMaxEntry.insert(0, str(high))
 
-def greenMaxEntry():
+def setGreenMinMax(low, high):
     global maxColorValues
-    tempMax = int(greenEntry.get())
-    if (tempMax < 1) or (tempMax > MAX_COLOR_VALUE):
-        return
-    maxColorValues[GREEN] = tempMax
-    greenSlider.set(int(maxColorValues[GREEN]))
+    global minColorValues
+    minColorValues[GREEN] = low
+    maxColorValues[GREEN] = high
+    greenMinEntry.delete(0, 5)
+    greenMinEntry.insert(0, str(low))
+    greenMaxEntry.delete(0, 5)
+    greenMaxEntry.insert(0, str(high))
 
-def blueMaxEntry():
+def setBlueMinMax(low, high):
     global maxColorValues
-    tempMax = int(blueEntry.get())
-    if (tempMax < 1) or (tempMax > MAX_COLOR_VALUE):
-        return
-    maxColorValues[BLUE] = tempMax
-    blueSlider.set(int(maxColorValues[BLUE]))
+    global minColorValues
+    minColorValues[BLUE] = low
+    maxColorValues[BLUE] = high
+    blueMinEntry.delete(0, 5)
+    blueMinEntry.insert(0, str(low))
+    blueMaxEntry.delete(0, 5)
+    blueMaxEntry.insert(0, str(high))
+
+def updateRedMax():
+    global latestColorValues
+    setRedMinMax(minColorValues[RED], latestColorValues[RED])
+
+def updateGreenMax():
+    global latestColorValues
+    setGreenMinMax(minColorValues[GREEN], latestColorValues[GREEN])
+
+def updateBlueMax():
+    global latestColorValues
+    setBlueMinMax(minColorValues[BLUE], latestColorValues[BLUE])
 
 def calibrateMax():
     global maxColorValues
@@ -135,9 +185,13 @@ def calibrateMax():
             maxColorValues[color] = 1
         if maxColorValues[color] > MAX_COLOR_VALUE:
             maxColorValues[color] = MAX_COLOR_VALUE
-    redSlider.set(int(maxColorValues[RED]))
-    greenSlider.set(int(maxColorValues[GREEN]))
-    blueSlider.set(int(maxColorValues[BLUE]))
+
+def pause():
+    global g_pause
+    if g_pause == 0:
+        g_pause = 1
+    else:
+        g_pause = 0
 
 ''' UI Configuration '''
 def setupUI():
@@ -158,37 +212,40 @@ def setupUI():
     blueButton.grid(row=buttonRow,column=4)
 
     infoRow = 2
-    valueText=tk.Label(master, text="Current")
-    valueText.grid(row=infoRow, column=1)
-    infoText=tk.Label(master, text="Max values")
-    infoText.grid(row=infoRow, column=2, columnspan=3)
+    currentText=tk.Label(master, text="Current")
+    currentText.grid(row=infoRow, column=0)
+    minText=tk.Label(master, text="Min")
+    minText.grid(row=infoRow, column=1)
+    maxText=tk.Label(master, text="Max")
+    maxText.grid(row=infoRow, column=3)
+    maxText.grid(row=infoRow, column=2, columnspan=3)
 
     redRow=3
     redText.grid(row=redRow, column=0)
-    redSlider=tk.Scale(master, from_=1, to=MAX_COLOR_VALUE, orient=tk.HORIZONTAL, command=setRedMax)
-    redSlider.set(MAX_COLOR_VALUE)
-    redSlider.grid(row=redRow, column=1, columnspan=4, sticky="W")
-    redEntry.grid(row=redRow, column=4, columnspan=1)
-    redEntryButton=tk.Button(master, text="Set", command=redMaxEntry)
-    redEntryButton.grid(row=redRow, column=5)
+    redMinEntry.grid(row=redRow, column=1, columnspan=1)
+    redMinClick=tk.Button(master, text="rMin", command=updateRedMin)
+    redMinClick.grid(row=redRow, column=2, columnspan=1)
+    redMaxEntry.grid(row=redRow, column=3, columnspan=1)
+    redMaxClick=tk.Button(master, text="rMax", command=updateRedMax)
+    redMaxClick.grid(row=redRow, column=4)
 
     greenRow=redRow+1
     greenText.grid(row=greenRow, column=0)
-    greenSlider=tk.Scale(master, from_=1, to=MAX_COLOR_VALUE, orient=tk.HORIZONTAL, command=setGreenMax)
-    greenSlider.set(MAX_COLOR_VALUE)
-    greenSlider.grid(row=greenRow, column=1, columnspan=10, sticky="W")
-    greenEntry.grid(row=greenRow, column=4, columnspan=1)
-    greenEntryButton=tk.Button(master, text="Set", command=greenMaxEntry)
-    greenEntryButton.grid(row=greenRow, column=5)
+    greenMinEntry.grid(row=greenRow, column=1, columnspan=1)
+    greenMinClick=tk.Button(master, text="gMin", command=updateGreenMin)
+    greenMinClick.grid(row=greenRow, column=2, columnspan=1)
+    greenMaxEntry.grid(row=greenRow, column=3, columnspan=1)
+    greenMaxClick=tk.Button(master, text="gMax", command=updateGreenMax)
+    greenMaxClick.grid(row=greenRow, column=4)
 
     blueRow=greenRow+1
     blueText.grid(row=blueRow, column=0)
-    blueSlider=tk.Scale(master, from_=1, to=MAX_COLOR_VALUE, orient=tk.HORIZONTAL, command=setBlueMax)
-    blueSlider.set(MAX_COLOR_VALUE)
-    blueSlider.grid(row=blueRow, column=1, columnspan=10, sticky="W")
-    blueEntry.grid(row=blueRow, column=4, columnspan=1)
-    blueEntryButton=tk.Button(master, text="Set", command=blueMaxEntry)
-    blueEntryButton.grid(row=blueRow, column=5)
+    blueMinEntry.grid(row=blueRow, column=1, columnspan=1)
+    blueMinClick=tk.Button(master, text="bMin", command=updateBlueMin)
+    blueMinClick.grid(row=blueRow, column=2, columnspan=1)
+    blueMaxEntry.grid(row=blueRow, column=3, columnspan=1)
+    blueMaxClick=tk.Button(master, text="bMax", command=updateBlueMax)
+    blueMaxClick.grid(row=blueRow, column=4)
 
     calibrateRow=blueRow+1
     calibrateMaxButton=tk.Button(master, text="Calibrate Max Values", command=calibrateMax)
@@ -198,9 +255,21 @@ def setupUI():
     canvas.create_rectangle(30, 10, 120, 80, outline="black", fill ="black")
     canvas.grid(row=colorRow, column=1, columnspan=6)
 
+    rgbLabelRow=colorRow + 1
+    rgbLabel.grid(row=rgbLabelRow, column=1, columnspan=6)
+
+    pauseButtonRow=rgbLabelRow + 1
+    pauseButton=tk.Button(master, text="Pause", command=pause)
+    pauseButton.grid(row=pauseButtonRow, column=1, columnspan=6)
+
 def pollRGB():
     global maxColorValues
     global latestColorValues
+    global g_pause
+
+    if g_pause == 1:
+        return
+
     line = ser.readline().rstrip().decode("utf-8")
     rgb = line.split(',')
     print("{0}/{1},{2}/{3},{4}/{5}".format(int(rgb[RED]), maxColorValues[RED], 
@@ -220,15 +289,16 @@ def pollRGB():
     rgb[GREEN] = rgb[GREEN] / int(maxColorValues[GREEN]) * 255
     rgb[BLUE] = rgb[BLUE] / int(maxColorValues[BLUE]) * 255
     colorval = "#%02x%02x%02x" % (int(rgb[RED]), int(rgb[GREEN]), int(rgb[BLUE]))
-    print(colorval)
+    rgbLabel.config(text=colorval)
     canvas.create_rectangle(30, 10, 120, 80, outline=colorval, fill =colorval)
     canvas.grid(row=7, column=1, columnspan=6)
     
     master.after(RGB_POLL_RATE, pollRGB)
 
+setRedMinMax(minColorValues[RED], maxColorValues[RED])
+setGreenMinMax(minColorValues[GREEN], maxColorValues[GREEN])
+setBlueMinMax(minColorValues[BLUE], maxColorValues[BLUE])
+
 setupUI()
-setRedMax(MAX_COLOR_VALUE)
-setGreenMax(MAX_COLOR_VALUE)
-setBlueMax(MAX_COLOR_VALUE)
 master.after(RGB_POLL_RATE, pollRGB)
 master.mainloop()
