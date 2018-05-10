@@ -4,7 +4,7 @@ This example pairs a simple Serial firmata with a Python sketch to dynamically m
 
 It can also set maximum RGB values to help hone in the calibrated RGB reading.
 
-![Example RGB Sensor Evaluation Window usage](TODO)
+![Example RGB Sensor Evaluation Window usage](https://github.com/sparkfun/SparkFun_BH1749NUC_Arduino_Library/raw/master/examples/Example6_pyRGBVisualizer/pyRGBVisualizer-screenshot.png)
 
 ## Arduino Setup Instructions
 
