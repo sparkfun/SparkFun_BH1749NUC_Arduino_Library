@@ -2,7 +2,7 @@
   This is a library written for the BH1749NUC Color Sensor
   SparkFun sells these at its website: www.sparkfun.com
   Do you like this library? Help support SparkFun. Buy a board!
-  https://www.sparkfun.com/products/TODO
+  https://www.sparkfun.com/products/14733
   Written by Jim Lindblom @ SparkFun Electronics, May 4th, 2018
   The BH1749NUC is a 16-bit RGB and IR color sensor that communicates via an I2C bus.
   The sensor is mounted on our QWIIC RGB Sensor Board, paired with a PCA9536 I/O expander
@@ -67,6 +67,8 @@
 #define BH1749NUC_PERSISTENCE_MASK  0x03
 #define BH1749NUC_PERSISTENCE_SHIFT 0
 
+#define BH1749NUC_PART_ID 0x0D
+
 enum {
     BH1749NUC_RED_L,       // 0
     BH1749NUC_RED_H,       // 1
@@ -109,8 +111,10 @@ BH1749NUC_error_t BH1749NUC::begin(BH1749NUC_Address_t deviceAddress, TwoWire &w
     _deviceAddress = deviceAddress;
     _i2cPort = &wirePort;
 
+    // Initialize I2C port
     _i2cPort->begin();
 
+    // To verify connection - read the systemContorl register and check the Part ID value
     retVal = readI2CBuffer(&systemControl, BH1749NUC_REGISTER_SYSTEM_CONTROL, 1);
     if ( retVal != BH1749NUC_ERROR_SUCCESS)
     {
@@ -123,6 +127,7 @@ BH1749NUC_error_t BH1749NUC::begin(BH1749NUC_Address_t deviceAddress, TwoWire &w
         return BH1749NUC_ERROR_PART_ID;
     }
 
+    // Enable the sensor -- begin measurments
     setMeasurementActive(true);
 
     return BH1749NUC_ERROR_SUCCESS;
@@ -130,6 +135,7 @@ BH1749NUC_error_t BH1749NUC::begin(BH1749NUC_Address_t deviceAddress, TwoWire &w
 
 boolean BH1749NUC::begin()
 {
+    // Without any arguments, begin with default values, then return true on success
     if (begin(BH1749NUC_ADDRESS_DEFAULT, Wire) == BH1749NUC_ERROR_SUCCESS)
     {
         return true;
@@ -631,23 +637,7 @@ boolean BH1749NUC::available(void)
     return ready();
 }
 
-// Private
-BH1749NUC::BH1749NUC_measurement_valid_t BH1749NUC::readValid(void)
-{
-    uint8_t rawRegister;
-    BH1749NUC_error_t err;
-    BH1749NUC_measurement_valid_t retVal;
-
-    err = readI2CRegister(&rawRegister, BH1749NUC_REGISTER_MODE_CONTROL2);
-    if (err  != BH1749NUC_ERROR_SUCCESS)
-    {
-        return BH1749NUC_MEASUREMENT_VALID_INVALID_INVALID;
-    }
-    retVal = (BH1749NUC_measurement_valid_t) BH1749NUC_MASK(rawRegister, BH1749NUC_VALID_MASK, BH1749NUC_VALID_SHIFT);
-    return retVal;
-}
-
-BH1749NUC::BH1749NUC_measurement_active_t BH1749NUC::readMeasurementActive(void)
+BH1749NUC_measurement_active_t BH1749NUC::readMeasurementActive(void)
 {
     uint8_t rawRegister;
     BH1749NUC_error_t err;
@@ -679,6 +669,22 @@ BH1749NUC_error_t BH1749NUC::setMeasurementActive(boolean active)
     
     err = writeI2CRegister(rawRegister, BH1749NUC_REGISTER_MODE_CONTROL2);
     return err;
+}
+
+// Private
+BH1749NUC::BH1749NUC_measurement_valid_t BH1749NUC::readValid(void)
+{
+    uint8_t rawRegister;
+    BH1749NUC_error_t err;
+    BH1749NUC_measurement_valid_t retVal;
+
+    err = readI2CRegister(&rawRegister, BH1749NUC_REGISTER_MODE_CONTROL2);
+    if (err  != BH1749NUC_ERROR_SUCCESS)
+    {
+        return BH1749NUC_MEASUREMENT_VALID_INVALID_INVALID;
+    }
+    retVal = (BH1749NUC_measurement_valid_t) BH1749NUC_MASK(rawRegister, BH1749NUC_VALID_MASK, BH1749NUC_VALID_SHIFT);
+    return retVal;
 }
 
 BH1749NUC_error_t BH1749NUC::readI2CBuffer(uint8_t * dest, BH1749NUC_REGISTER_t startRegister, uint16_t len)
