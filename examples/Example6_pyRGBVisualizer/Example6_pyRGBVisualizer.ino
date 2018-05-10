@@ -41,7 +41,7 @@ void setup() {
     io.write(i, HIGH);   // Turn all LED's off
   }
   
-  if (rgb.begin(BH1749NUC_ADDRESS_CLOSED) != BH1749NUC_SUCCESS)
+  if (rgb.begin != BH1749NUC_SUCCESS)
   {
     Serial.println("Error initializing the rgb sensor.");
     while (1) ;
