@@ -17,6 +17,7 @@ green	KEYWORD1
 blue	KEYWORD1
 ir	KEYWORD1
 green2	KEYWORD1
+BH1749NUC_color_t KEYWORD1
 
 #######################################
 # Methods and Functions (KEYWORD2)

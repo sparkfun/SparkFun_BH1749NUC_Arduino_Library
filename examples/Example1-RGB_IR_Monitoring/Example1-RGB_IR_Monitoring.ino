@@ -5,7 +5,7 @@
   Date: May 4, 2018
   License: This code is public domain but you buy me a beer if you use this and we meet someday (Beerware license).
   Feel like supporting our work? Buy a board from SparkFun!
-  https://www.sparkfun.com/products/TODO
+  https://www.sparkfun.com/products/14733
   This example demonstrates how to initialize and configure the BH1749NUC color sensor.
   Then check for new data and print the RGB and IR color data to the Serial Monitor at 115200
   

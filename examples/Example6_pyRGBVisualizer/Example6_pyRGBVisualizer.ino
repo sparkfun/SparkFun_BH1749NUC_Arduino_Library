@@ -15,13 +15,33 @@
   Watch each LED turn on one-at-a-time
 */
 #include <SparkFun_BH1749NUC_Arduino_Library.h>
+#include <SparkFun_PCA9536_Arduino_Library.h>
 
+PCA9536 io;
 BH1749NUC rgb;
+
+#define WHITE_LED 0
+#define RED_LED   1
+#define GREEN_LED 2
+#define BLUE_LED  3
 
 void setup() {
   Serial.begin(115200);
 
-  if (rgb.begin() != BH1749NUC_SUCCESS)
+  if (io.begin() != PCA9536_SUCCESS)
+  {
+    Serial.println("Error: initializing the IO expander");
+    while (1);
+  }
+  
+  // IO Expander set up:
+  for (int i = 0; i < 4; i++)
+  {
+    io.pinMode(i, OUTPUT); // Set all LED pins to output
+    io.write(i, HIGH);   // Turn all LED's off
+  }
+  
+  if (rgb.begin(BH1749NUC_ADDRESS_CLOSED) != BH1749NUC_SUCCESS)
   {
     Serial.println("Error initializing the rgb sensor.");
     while (1) ;
@@ -40,11 +60,41 @@ void setup() {
 void loop() {
   if (rgb.available())
   {
-    Serial.println("Red: " + String(rgb.colors.red));
-    Serial.println("Green: " + String(rgb.colors.green));
-    Serial.println("Blue: " + String(rgb.colors.blue));
-    Serial.println("IR: " + String(rgb.colors.ir));
-    Serial.println("Green2: " + String(rgb.colors.green2));
-    Serial.println();
+    Serial.println("" 
+                   + String(rgb.colors.red) + "," 
+                   + String(rgb.colors.green) + "," 
+                   + String(rgb.colors.blue) + ","
+                   + String(rgb.colors.ir));
   }
 }
+
+void serialEvent() {
+  while (Serial.available() < 2) ;
+  char c = Serial.read();
+  char v = Serial.read();
+  uint8_t pin = 0xFF;
+  uint8_t value = 0xFF;
+  switch (c)
+  {
+  case 'w':
+    pin = WHITE_LED;
+    break;
+  case 'r':
+    pin = RED_LED;
+    break;
+  case 'g':
+    pin = GREEN_LED;
+    break;
+  case 'b':
+    pin = BLUE_LED;
+    break;
+  }
+  
+  if (v == '1') value = LOW;
+  else if (v == '0') value = HIGH;
+
+  if ((pin != 0xFF) && (value != 0xFF)) {
+    io.write(pin, value);
+  }
+}
+
